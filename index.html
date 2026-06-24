@@ -2316,7 +2316,19 @@ function addBldgDrawPoint(latlng) {
 
 function finishBldgDraw() {
   if (bldgDrawPoints.length < 3) { showToast('3点以上クリックしてください'); return; }
-  const name = prompt('この建物の名称を入力してください（省略可）') || '';
+  const selectedType =
+  document.getElementById('polygon-type').value;
+
+const typeNames = {
+  building: '建物',
+  parking: '駐車場',
+  park: '公園',
+  vacant: '空き地'
+};
+
+const name = prompt(
+  `この${typeNames[selectedType]}の名称を入力してください（省略可）`
+) || '';
   const newId = 'cbldg_' + Date.now();
   const selectedType =
   document.getElementById('polygon-type').value;
