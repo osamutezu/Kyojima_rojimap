@@ -545,6 +545,12 @@ html,body{height:100%;font-family:'Helvetica Neue',sans-serif;color:#2c2c2a;over
   </div>
   <div class="sep"></div>
   <button class="tb-btn" id="btn-draw" onclick="startDraw()">＋ 路地追加</button>
+  <select id="polygon-type" class="tb-btn">
+  <option value="building">建物</option>
+  <option value="parking">駐車場</option>
+  <option value="park">公園</option>
+  <option value="vacant">空き地</option>
+</select>
   <button class="tb-btn" id="btn-bldg-draw" onclick="startBldgDraw()">＋ 建物追加</button>
   <button class="tb-btn" id="btn-load-osm-bldg" onclick="loadOsmBuildings()" title="Overpass APIから現在の画面内の建物を取得">🌐 OSM建物取得</button>
   <button class="tb-btn" id="btn-reset-osm-cache" onclick="resetOsmCache()" title="取得済みキャッシュをリセット" style="display:none">↺ キャッシュ解除</button>
@@ -2312,7 +2318,15 @@ function finishBldgDraw() {
   if (bldgDrawPoints.length < 3) { showToast('3点以上クリックしてください'); return; }
   const name = prompt('この建物の名称を入力してください（省略可）') || '';
   const newId = 'cbldg_' + Date.now();
-  const cb = { id: newId, name, ll: bldgDrawPoints.map(p=>[p.lat, p.lng]) };
+  const selectedType =
+  document.getElementById('polygon-type').value;
+
+const cb = {
+  id: newId,
+  name,
+  type: selectedType,
+  ll: bldgDrawPoints.map(p=>[p.lat, p.lng])
+};
   customBldgs.push(cb);
   saveCustomBldgs();
   renderCustomBldg(cb);
@@ -2320,15 +2334,34 @@ function finishBldgDraw() {
   selectBuilding(newId);
   showToast('建物を追加しました。データを入力してください');
 }
-
+const POLYGON_COLORS = {
+  building: {
+    fill: '#f5e8cc',
+    stroke: '#BA7517'
+  },
+  parking: {
+    fill: '#8fb8ff',
+    stroke: '#4678d4'
+  },
+  park: {
+    fill: '#a9d18e',
+    stroke: '#4d8a3f'
+  },
+  vacant: {
+    fill: '#ffe699',
+    stroke: '#c9a227'
+  }
+};
 function renderCustomBldg(cb) {
   const latlngs = cb.ll.map(([lat,lon])=>[lat,lon]);
   const bs = bldgSurvey[cb.id] || {};
   const hasSurvey = bs.surveyStatus && bs.surveyStatus !== 'none';
+  const c =
+  POLYGON_COLORS[cb.type || 'building'];
   const poly = L.polygon(latlngs, {
-    fillColor: hasSurvey ? '#dde8f5' : '#f5e8cc',
+    fillColor: c.fill,
     fillOpacity: 1,
-    color: hasSurvey ? '#3a7fc1' : '#BA7517',
+    color: c.stroke,
     weight: 1.2,
     className: 'bldg-polygon',
     bubblingMouseEvents: false,
