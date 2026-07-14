@@ -563,7 +563,14 @@ html,body{height:100%;font-family:'Helvetica Neue',sans-serif;color:#2c2c2a;over
   <button class="tb-btn" id="btn-print-mode" onclick="enterPrintMode()">🖨 印刷</button>
   <div class="sep"></div>
   <button class="tb-btn" onclick="exportData()">書き出し</button>
-  <label class="tb-btn" style="cursor:pointer">読み込み<input type="file" accept=".json" style="display:none" onchange="importData(event)"></label>
+  <button class="tb-btn" onclick="exportGitHubData()">GitHub用書き出し</button>
+  <label class="tb-btn" style="cursor:pointer">
+    読み込み
+    <input
+      type="file"
+      accept=".json"
+      style="display:none"
+      onchange="importData(event)"></label>
 </div>
 
 <!-- Main -->
@@ -1519,6 +1526,69 @@ function exportData() {
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
   a.download='kyojima_survey_'+new Date().toISOString().slice(0,10)+'.json'; a.click();
   showToast('エクスポートしました（画像込み）');
+}
+  function exportGitHubData() {
+  const meta = {
+    alley: {},
+    building: {},
+    customAlleys: JSON.parse(JSON.stringify(customAlleys)),
+    customBldgs: JSON.parse(JSON.stringify(customBldgs)),
+    deletedItems: JSON.parse(JSON.stringify(deletedItems))
+  };
+
+  // 路地調査データ
+  Object.entries(survey).forEach(([id, s]) => {
+    meta.alley[id] = {
+      status: s.status,
+      width: s.width,
+      length: s.length,
+      note: s.note,
+      openings: s.openings || [],
+      objects: s.objects || {
+        road: [],
+        private: []
+      },
+
+      // Base64画像・PDFはGitHub用データには含めない
+      files: {
+        plan: [],
+        elev: [],
+        other: []
+      }
+    };
+  });
+
+  // 建物調査データ
+  Object.entries(bldgSurvey).forEach(([id, s]) => {
+    meta.building[id] = {
+      ...s,
+
+      // 建物の添付ファイルも除外
+      files: {
+        plan: [],
+        elev: [],
+        other: []
+      }
+    };
+  });
+
+  const blob = new Blob(
+    [JSON.stringify(meta, null, 2)],
+    { type: 'application/json' }
+  );
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+
+  a.href = url;
+  a.download = 'data.json';
+  a.click();
+
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 1000);
+
+  showToast('GitHub用のdata.jsonを書き出しました');
 }
 function importData(e) {
   const file=e.target.files[0]; if(!file) return;
